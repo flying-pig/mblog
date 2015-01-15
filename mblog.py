@@ -67,6 +67,7 @@ class Application(tornado.web.Application):
         #(r"/logout", LogoutHandler),
         #(r"/testflash", TestFlashHandler),
         #(r"/test_auth", TestAuthHandler),
+	(r"/amazeui", AmazeuiHandler)
         #(r".*", PageNotFoundHandler),
     ]
     settings = dict(
@@ -81,6 +82,10 @@ class Application(tornado.web.Application):
     tornado.web.Application.__init__(self, handlers, **settings)
     # Have one global connection to the blog DB across all handlers
     self.db = motor.MotorClient().mblog
+
+class AmazeuiHandler(BaseHandler):
+  def get(self):
+    self.render2('amazeui.html')
 
 class HomeHandler(BaseHandler):
   @tornado.gen.coroutine
