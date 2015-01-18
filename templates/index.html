@@ -1,8 +1,28 @@
 {% extends	"base.html" %}
 {% block content %}
-{% for blog in message %}
-<ul>
-	<li><a href='/user/{{blog['author']}}'>{{blog['author']}}</a><a href='/blog/{{blog['_id']}}'>{{blog['subject']}}</a></li><p>{{blog['ctime']}}</p>
-</ul>
-{% endfor %}
+<div class='am-panel am-panel-primary'>
+	<div class='am-panel-hd'>
+		<h3 class='am-panel-title'>New Blogs</h3>
+	</div>
+	<div >
+		<table class='am-table am-table-striped am-table-hover am-g'>
+			<thead>
+				<tr>
+					<th class='am-u-sm-2'>Author</th>
+					<th class='am-u-sm-7'>Subject</th>
+					<th class='am-u-sm-3'>Date</th>
+				</tr>
+			</thead>
+			<tbody>
+			{% for blog in message %}
+				<tr>
+					<td class='am-u-sm-2'><a href='/user/{{blog['author']}}'>{{blog['author']}}</a></td>
+					<td class='am-u-sm-7'><a href='/blog/{{blog['_id']}}'>{{blog['subject']}}</a></td>
+					<td class='am-u-sm-3'>{{blog['ctime']}}</td>
+				</tr>
+			{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
 {% endblock %}
