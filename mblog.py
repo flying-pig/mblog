@@ -91,7 +91,9 @@ class HomeHandler(BaseHandler):
     name = ''
     if res:
       name = res['name']
-    self.render2('index.html', message="wellcome " + name, bloguser=name)
+    cursor = self.db.blogs.find()
+    blog_list = yield cursor.to_list(length=5)
+    self.render2('index.html', message=blog_list, bloguser=name)
 
   @tornado.gen.coroutine
   def post(self):

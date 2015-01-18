@@ -1,8 +1,8 @@
 {% extends	"base.html" %}
 {% block content %}
-	<div class="starter-template">
-		<h1>Hello,_________,  world!</h1>
-		<div class="message">{{ message }} </div>
-		{{ bloguser }}
-	</div>
+{% for blog in message %}
+<ul>
+	<li><a href='/user/{{blog['author']}}'>{{blog['author']}}</a><a href='/blog/{{blog['_id']}}'>{{blog['subject']}}</a></li><p>{{blog['ctime']}}</p>
+</ul>
+{% endfor %}
 {% endblock %}
