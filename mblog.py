@@ -9,6 +9,8 @@ import bcrypt
 import motor
 import tornado.gen
 import bson
+import markdown2
+import datetime
 from paginator import Paginator
 
 from tornado.options import define, options
@@ -60,6 +62,10 @@ class BaseHandler(tornado.web.RequestHandler, TemplateRendering):
         def db(self):
 	  return self.application.db
 
+	@property
+	def markdowner(self):
+	  return self.application.markdowner
+
 	def render3(self, template_name, **kwargs):
 	  kwargs.update({
 	    'settings': self.settings,
@@ -82,7 +88,9 @@ class Application(tornado.web.Application):
 	(r"/users", UsersHandler),
         #(r"/testflash", TestFlashHandler),
         #(r"/test_auth", TestAuthHandler),
-	(r"/amazeui", AmazeuiHandler)
+	(r"/amazeui", AmazeuiHandler),
+	(r"/post", PostHandler),
+	(r"/blog/([^/]+)", BlogHandler),
         #(r".*", PageNotFoundHandler),
     ]
     settings = dict(
@@ -98,10 +106,66 @@ class Application(tornado.web.Application):
     tornado.web.Application.__init__(self, handlers, **settings)
     # Have one global connection to the blog DB across all handlers
     self.db = motor.MotorClient().mblog
+    self.markdowner = markdown2.Markdown(html4tags=False)
 
 class AmazeuiHandler(BaseHandler):
   def get(self):
     self.render('amazeui.html')
+
+class BlogHandler(BaseHandler):
+  @tornado.gen.coroutine
+  def get(self, blog_id):
+    user_id = self.get_secure_cookie('bloguser')
+    res = yield self.db.authors.find_one({"_id": bson.ObjectId(user_id)})
+    name = ''
+    if res:
+      name = res['name']
+    print blog_id
+    blog = yield self.db.blogs.find_one({"_id": bson.ObjectId(blog_id)})
+    print blog
+    self.render('blog.html', bloguser=name, title=self.settings['title'],
+			     blog=blog)
+
+class PostHandler(BaseHandler):
+  @tornado.gen.coroutine
+  def get(self):
+    user_id = self.get_secure_cookie('bloguser')
+    res = yield self.db.authors.find_one({"_id": bson.ObjectId(user_id)})
+    name = ''
+    if res:
+      name = res['name']
+    self.render('post.html', bloguser=name, title=self.settings['title'])
+
+  @tornado.gen.coroutine
+  def post(self):
+    user_id = self.get_secure_cookie('bloguser')
+    res = yield self.db.authors.find_one({"_id": bson.ObjectId(user_id)})
+    name = ''
+    if res:
+      name = res['name']
+    subject=''
+    blog_src=''
+    try:
+      subject = self.get_argument('subject')
+      blog_src = self.get_argument('content')
+    except Exception, e:
+      print "come's an error", e
+      self.redirect('/post')#, bloguser=name, title=self.settings['title'])
+      return
+    if subject == '' or blog_src == '':
+      self.redirect('/post')
+      return
+    blog = self.markdowner.convert(blog_src)
+    print "blog is:", blog
+    try:
+      id = yield self.db.blogs.insert({'subject': subject, 'content':blog,
+				       'author':name,
+				       'ctime':datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")})
+      print "insert: ", id, "|", str(id)
+    except Exception, e:
+      print e
+      self.redirect("/post")
+    self.redirect('/blog/' + str(id))
 
 class UsersHandler(BaseHandler):
   @tornado.gen.coroutine
@@ -148,9 +212,10 @@ class HomeHandler(BaseHandler):
     name = self.get_argument('username')
     password = self.get_argument('password')
     cursor = self.db.authors.find({"name": name})
+    user = None
     while (yield cursor.fetch_next):
       user = cursor.next_object()
-      print user
+      print "login user:", user
       try:
 	if user['name'] == name:
 	  if str(user['password']) == bcrypt.hashpw(password.encode('utf-8'), str(user['password'])):
@@ -158,6 +223,8 @@ class HomeHandler(BaseHandler):
 	    break;
       except Exception, e:
 	print e
+    if user == None:
+      print 'user not found'
     self.redirect('/')
 
 class RegisterHandler(BaseHandler):

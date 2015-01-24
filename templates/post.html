@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<form atction='/post' method='post' class='am-form'>
+	<fieldset>
+		<legend>Compose Blog</legend>
+		<div class='am-form-group'>
+			<label for='doc-ta-1'>subject</label>
+			<input type='text' name='subject' id='subject' class='am-form-field am-radius'></input>
+		</div>
+		<div class='am-form-group'>
+			<label for='doc-ta-1'>blog paragraph</label>
+			<textarea class='am-form-field am-radius' id='subject' name='content' rows='20' id='doc-ta-1'></textarea>
+		</div>
+		<button type="submit" class="am-btn am-btn-default">Submit</button>
+	</fieldset>
+	{% module xsrf_form_html() %}
+</form>
+{% end %}
