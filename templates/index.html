@@ -1,11 +1,12 @@
-{% extends	"base.html" %}
+{% extends "base.html" %}
 {% block content %}
 <div class='am-panel am-panel-primary'>
 	<div class='am-panel-hd'>
 		<h3 class='am-panel-title'>New Blogs</h3>
 	</div>
-	<div >
+	<div>
 		<table class='am-table am-table-striped am-table-hover am-g'>
+			{% module Paginator(page, page_size, results_count) %}
 			<thead>
 				<tr>
 					<th class='am-u-sm-2'>Author</th>
@@ -20,9 +21,11 @@
 					<td class='am-u-sm-7'><a href='/blog/{{blog['_id']}}'>{{blog['subject']}}</a></td>
 					<td class='am-u-sm-3'>{{blog['ctime']}}</td>
 				</tr>
-			{% endfor %}
+			{% end %}
 			</tbody>
 		</table>
+		{% module Paginator(page, page_size, results_count) %}
 	</div>
+	<div style="display:none">{"page": {{ page }}}</div>
 </div>
-{% endblock %}
+{% end %}

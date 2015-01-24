@@ -1,0 +1,30 @@
+{% extends	"base.html" %}
+{% block content %}
+<div class='am-panel am-panel-primary'>
+	<div class='am-panel-hd'>
+		<h3 class='am-panel-title'>New Blogs</h3>
+	</div>
+	<div >
+		<table class='am-table am-table-striped am-table-hover am-g'>
+			<thead>
+				<tr>
+					<th class='am-u-sm-2'>Administrator</th>
+					<th class='am-u-sm-7'>Author</th>
+					<th class='am-u-sm-3'>Date</th>
+				</tr>
+			</thead>
+			<tbody>
+			{% for user in users %}
+				<tr>
+					<td class='am-u-sm-2'>N</td>
+					<td class='am-u-sm-7'><a href='/user/{{user['name']}}'>{{user['name']}}</a></td>
+					<td class='am-u-sm-3'>{{user['ctime']}}</td>
+				</tr>
+			{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+{% endblock %}
+

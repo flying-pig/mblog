@@ -9,12 +9,14 @@ import bcrypt
 import motor
 import tornado.gen
 import bson
+from paginator import Paginator
 
 from tornado.options import define, options
 
 from jinja2 import Environment, FileSystemLoader, TemplateNotFound
 
 define("port", default=8888, help="run on the given port", type=int)
+define("page_size", default=20, help="item numbers in one page", type=int)
 
 class TemplateRendering:
 	'''
@@ -58,6 +60,18 @@ class BaseHandler(tornado.web.RequestHandler, TemplateRendering):
         def db(self):
 	  return self.application.db
 
+	def render3(self, template_name, **kwargs):
+	  kwargs.update({
+	    'settings': self.settings,
+	    'static_url': self.settings.get('static_url_prefix', '/static'),
+	    'request': self.request,
+	    'xsrf_token': self.xsrf_token,
+	    'xsrf_form_html': self.xsrf_form_html,
+	    'title': self.settings['title'],
+	    })
+	  self.render(template_name, **kwargs)
+
+
 class Application(tornado.web.Application):
   def __init__(self):
     handlers = [
@@ -65,6 +79,7 @@ class Application(tornado.web.Application):
         #(r"/login", LoginHandler),
         (r"/register", RegisterHandler),
         #(r"/logout", LogoutHandler),
+	(r"/users", UsersHandler),
         #(r"/testflash", TestFlashHandler),
         #(r"/test_auth", TestAuthHandler),
 	(r"/amazeui", AmazeuiHandler)
@@ -77,7 +92,8 @@ class Application(tornado.web.Application):
         xsrf_cookies=True,
         debug=True,
         login_url="/login",
-        cookie_secret="4C2I8ieSSWyqJjs59dXlhLjosev9Ikxbvj3nxMZzxMI="
+        cookie_secret="4C2I8ieSSWyqJjs59dXlhLjosev9Ikxbvj3nxMZzxMI=",
+	ui_modules={'Paginator': Paginator}
     )
     tornado.web.Application.__init__(self, handlers, **settings)
     # Have one global connection to the blog DB across all handlers
@@ -85,20 +101,47 @@ class Application(tornado.web.Application):
 
 class AmazeuiHandler(BaseHandler):
   def get(self):
-    self.render2('amazeui.html')
+    self.render('amazeui.html')
+
+class UsersHandler(BaseHandler):
+  @tornado.gen.coroutine
+  def get(self):
+    cursor = self.db.authors.find()
+    user_list = yield cursor.to_list(length=5)
+    print user_list
+    self.render('users.html', users=user_list)
 
 class HomeHandler(BaseHandler):
+  #@tornado.web.authenticated
   @tornado.gen.coroutine
   def get(self):
     user_id = self.get_secure_cookie('bloguser')
+    page = int(self.get_query_argument('page', 1))
+    #last_id = self.get_argument('the_last', '')
     res = yield self.db.authors.find_one({"_id": bson.ObjectId(user_id)})
     print res
     name = ''
     if res:
       name = res['name']
-    cursor = self.db.blogs.find()
-    blog_list = yield cursor.to_list(length=5)
-    self.render2('index.html', message=blog_list, bloguser=name)
+    #cursor = self.db.blogs.find({"_id": {"$gt": ObjectId("54b1378ee138237229c49680")}})
+    results_count = 0
+    cursor = None
+
+    #if last_id == '':
+    #  cursor = self.db.blogs.find({}, limit=options.page_size)
+    #else:
+    #  cursor = self.db.blogs.find({"_id": {"$gt": bson.ObjectId(last_id)}}, limit=optons.page_size)
+    cursor = self.db.blogs.find({}, skip=(page-1)*options.page_size, limit=options.page_size)
+    results_count = yield cursor.count()
+    blog_list = yield cursor.to_list(length=options.page_size)
+    #last_id = blog_list[-1]["_id"]
+    self.render('index.html', message=blog_list,
+			      bloguser=name,
+			      page=page,
+			      page_size=options.page_size,
+			      results_count=results_count,
+			      #the_last=last_id,
+			      title=self.settings['title'])
 
   @tornado.gen.coroutine
   def post(self):
@@ -118,8 +161,15 @@ class HomeHandler(BaseHandler):
     self.redirect('/')
 
 class RegisterHandler(BaseHandler):
+  @tornado.gen.coroutine
   def get(self):
-    self.render2("register.html")
+    user_id = self.get_secure_cookie('bloguser')
+    res = yield self.db.authors.find_one({"_id": bson.ObjectId(user_id)})
+    print res
+    name = ''
+    if res:
+      name = res['name']
+    self.render("register.html", bloguser=name, title=self.settings['title'])
 
   @tornado.gen.coroutine
   def post(self):

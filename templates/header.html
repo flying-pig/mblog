@@ -20,12 +20,12 @@
 						<input type="password" name="password" placeholder="Password" class="form-control">
 					</div>
 					<button type="submit" class="btn btn-success">Sign in</button>
-					{{ xsrf_form_html() }}
+					{% module xsrf_form_html() %}
 				</form>
 			{% else %}
 				<li><a href='/user/{{ bloguser }}'>Wellcome {{ bloguser }}</a></li>
 				<li><a href='/logout'>Logout</a></li>
-			{% endif %}
+			{% end %}
 				<li class="active"><a href="/">Home</a></li>
 				<li><a href="#about">About</a></li>
 				<li><a href="#contact">Contact</a></li>

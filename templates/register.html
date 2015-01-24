@@ -16,6 +16,6 @@
 	</div>
 	<button class="btn btn-lg btn-primary btn-block" type="submit">Sign in</button>
 	<a href='/'>Sign up now</a>
-	{{ xsrf_form_html() }}
+	{% module xsrf_form_html() %}
 </form>
-{% endblock %}
+{% end %}
