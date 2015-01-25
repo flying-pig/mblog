@@ -147,7 +147,7 @@ class PostHandler(BaseHandler):
     blog_src=''
     try:
       subject = self.get_argument('subject')
-      blog_src = self.get_argument('content')
+      blog_src = self.get_argument('my-edit-area')
     except Exception, e:
       print "come's an error", e
       self.redirect('/post')#, bloguser=name, title=self.settings['title'])
@@ -195,7 +195,7 @@ class HomeHandler(BaseHandler):
     #  cursor = self.db.blogs.find({}, limit=options.page_size)
     #else:
     #  cursor = self.db.blogs.find({"_id": {"$gt": bson.ObjectId(last_id)}}, limit=optons.page_size)
-    cursor = self.db.blogs.find({}, skip=(page-1)*options.page_size, limit=options.page_size)
+    cursor = self.db.blogs.find({}, skip=(page-1)*options.page_size, sort=[("_id", -1)], limit=options.page_size)
     results_count = yield cursor.count()
     blog_list = yield cursor.to_list(length=options.page_size)
     #last_id = blog_list[-1]["_id"]
